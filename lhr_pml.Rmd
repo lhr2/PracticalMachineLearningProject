@@ -1,0 +1,92 @@
+---
+title: "Practical Machine Leaning Project"
+output: html_document
+---
+###Introduction to the Project
+
+This project looks at personal activity data with the goal of predicting
+*how well* an activity is done, not just *how much* of an activity is done.
+For this project a prediction model will be constructed to predict the 
+*effectiveness* of activity given the *amount* of movement.
+
+The data that will be used in this model is based on barbell lifts performed
+both correctly and incorrectly in five different ways. Information about the
+instructions given to the participants can be seen 
+[here](http://groupware.les.inf.puc-rio.br/har).
+
+Within the data set, there are five classes of workout results. The 
+[training data](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv)
+will be used to create a model that will be able to predict the class based on
+the amount of movement during the workout.
+
+###Data Loading
+
+Begin by loading the both the training and the test data.
+```{r}
+training <- read.csv("C:\\Users\\lisar\\Documents\\R\\PML\\pml-training.csv")
+testing <- read.csv("C:\\Users\\lisar\\Documents\\R\\PML\\pml-testing.csv")
+
+# these are not being used to illinate data for faster run time
+training$cvtd_timestamp <- NULL
+training$user_name <- NULL
+training$raw_timestamp_part_1 <- NULL
+training$raw_timestamp_part_2 <- NULL
+training$num_window <- NULL
+for (col_name in names(training)){
+        if (col_name %in% c("user_name", "classe")){
+                training[ , col_name] <- as.factor(training[ , col_name])
+        } else {
+                training[ , col_name] <- as.numeric(training[ , col_name])
+                if (nrow(training[is.na(training[ , col_name]) ,])){
+                        training[ ,col_name] <- NULL
+                }
+        }
+}
+
+# select the column names to use for prediction model
+cols <- c("X" , "user_name", "raw_timestamp_part_1", "raw_timestamp_part_2", 
+             "new_window", "num_window", "cvtd_timestamp")
+colsneeded <- setdiff(names(training), cols)
+newtraining <- subset(training, T, colsneeded)
+```
+
+###Data Modeling
+
+Now that there is a training set of data, fit the model. For the data that is 
+provided, a random forest model is an accurate model type, so that will be used.
+
+```{r eval=FALSE}
+library(caret)
+set.seed(2)
+
+# partition data for modeling
+trainingData <- createDataPartition(y=newtraining$classe, p=0.7, list=F)
+newtraining2 <- newtraining[trainingData,]
+testing2 <- newtraining[-trainingData,]
+
+# using the random forest model to predict classe results
+testFit <-train(classe ~ ., data=newtraining2, method="rf")
+```
+
+Now create a confusion matrix to show that the model's accuracy is acceptable.
+
+```{r eval=FALSE}
+confusionMatrix(predict(testFit), newtraintraining2$classe)
+```
+
+### Validate the Random Forest Model
+
+Test the model on the test dataset.
+
+```{r eval=FALSE}
+confusionMatrix(predict(testFit), testing2$classe)
+```
+
+This demonstrates that the model is accurate and acceptable for the given datasets.
+
+### Summary of results
+
+Based on the results above, the random forest model is a good selection for
+this predictive model. It produced a 99%+ accuracy rate. The model created for
+this project is good predictor of workout efficiency given the amount of 
+movement performed.
